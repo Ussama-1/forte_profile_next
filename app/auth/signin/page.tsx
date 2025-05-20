@@ -6,7 +6,7 @@ function page() {
   const callbackUrl = "/dashboard";
   return (
     <div>
-      <SignIn callbackUrl={callbackUrl} />
+      <SignIn callbackUrl={callbackUrl} /> 
     </div>
   );
 }
