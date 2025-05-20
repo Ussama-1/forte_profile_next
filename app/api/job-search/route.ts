@@ -27,23 +27,6 @@ interface LinkedInJobParams {
   companyId?: string[];
 }
 
-interface Job {
-  id?: string | number;
-  title: string;
-  description: string;
-  company?: string;
-  location?: string;
-  salaryRange?: string;
-  postedDate?: string;
-  matchScore?: number;
-  requirements?: string[];
-  benefits?: string[];
-  priorityMatches?: { categoryName: string; score: number }[];
-  source?: string;
-  url?: string;
-  applyLink?: string;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -225,8 +208,8 @@ export async function POST(request: NextRequest) {
           typeof item.description === "string"
             ? item.description
             : typeof item.jobDescription === "string"
-            ? item.jobDescription
-            : ""
+              ? item.jobDescription
+              : ""
         );
       // Extract benefits from description if not provided
       const benefits =
