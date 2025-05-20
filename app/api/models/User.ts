@@ -7,6 +7,12 @@ export interface IUser extends Document {
   password: string;
   emailVerified?: Date;
   image?: string;
+  phone?: string;
+  location?: string;
+  jobTitle?: string;
+  company?: string;
+  industry?: string;
+  experience?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -19,6 +25,12 @@ const UserSchema: Schema = new Schema(
     password: { type: String, required: true },
     emailVerified: { type: Date },
     image: { type: String },
+    phone: { type: String },
+    location: { type: String },
+    jobTitle: { type: String },
+    company: { type: String },
+    industry: { type: String },
+    experience: { type: String },
   },
   { timestamps: true }
 );

@@ -20,7 +20,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
-
+import { signOut, useSession } from "next-auth/react";
 interface NavItem {
   href: string;
   icon: React.ElementType;
@@ -60,24 +60,11 @@ const mainNavItems: NavItem[] = [
   },
 ];
 
-const footerNavItems: NavItem[] = [
-  {
-    href: "/dashboard/settings",
-    icon: Settings,
-    label: "Settings",
-  },
-  {
-    href: "/",
-    icon: LogOut,
-    label: "Logout",
-  },
-];
-
 export function MobileSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
-
+  const { data: session } = useSession();
   // Check if we're on mobile
   useEffect(() => {
     const checkIsMobile = () => {
@@ -188,18 +175,42 @@ export function MobileSidebar() {
 
         <div className="mt-auto border-t border-slate-700 p-4">
           <ul className="space-y-1">
-            {footerNavItems.map((item) => (
-              <li key={item.href}>
+            <li>
+              <Link
+                href="/dashboard/settings"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md ",
+                  pathname === "/dashboard/settings"
+                    ? "bg-[#ea724d] text-slate-700"
+                    : "text-slate-300"
+                )}
+                onClick={() => isMobile && setIsOpen(false)}
+              >
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </Link>
+            </li>
+            {/* Show Logout only if session exists */}
+            {session && (
+              <li>
                 <Link
-                  href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-300 hover:bg-slate-700"
-                  onClick={() => isMobile && setIsOpen(false)}
+                  href="/"
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md ",
+                    pathname === "/"
+                      ? "bg-[#ea724d] text-slate-700"
+                      : "text-slate-300"
+                  )}
+                  onClick={() => {
+                    signOut({ callbackUrl: "/" });
+                    isMobile && setIsOpen(false);
+                  }}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <LogOut className="h-5 w-5" />
+                  <span>Logout</span>
                 </Link>
               </li>
-            ))}
+            )}
           </ul>
           <div className="mt-4 text-xs text-slate-500">
             © 2025 - FINDING YOUR FORTE: QUANTUM LEAP
@@ -212,13 +223,6 @@ export function MobileSidebar() {
 
 export function MobileHeader() {
   return (
-    <header className="flex justify-end items-center mb-6 md:mb-6 pt-2">
-      <div className="ml-auto flex items-center gap-2">
-        <Avatar className="h-10 w-10 bg-teal-600 text-white">
-          <AvatarFallback>A</AvatarFallback>
-        </Avatar>
-        <span className="text-sm font-medium hidden sm:inline">Admin User</span>
-      </div>
-    </header>
+    <header className="flex justify-end items-center mb-6 md:mb-6 pt-2"></header>
   );
 }
