@@ -35,7 +35,7 @@ const FileTextExtractor = ({
         const textContent = await page.getTextContent();
 
         const pageText = textContent.items
-          .map((item: any) => {
+          .map((item) => {
             if (item && "str" in item) {
               return item.str;
             }

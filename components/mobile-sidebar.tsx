@@ -202,7 +202,9 @@ export function MobileSidebar() {
                   )}
                   onClick={() => {
                     signOut({ callbackUrl: "/" });
-                    isMobile && setIsOpen(false);
+                    if (isMobile) {
+                      setIsOpen(false);
+                    }
                   }}
                 >
                   <LogOut className="h-5 w-5" />
