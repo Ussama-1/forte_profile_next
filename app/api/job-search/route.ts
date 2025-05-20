@@ -216,12 +216,18 @@ export async function POST(request: NextRequest) {
 
     const { items } = await client.dataset(run.defaultDatasetId).listItems();
 
-    const jobs: Job[] = items.map((item, index) => {
+    const jobs = items.map((item, index) => {
       // Extract requirements from description if not provided
       const requirements =
         item.requirements ||
         item.skills ||
-        extractRequirements(item.description || item.jobDescription || "");
+        extractRequirements(
+          typeof item.description === "string"
+            ? item.description
+            : typeof item.jobDescription === "string"
+            ? item.jobDescription
+            : ""
+        );
       // Extract benefits from description if not provided
       const benefits =
         item.benefits ||
