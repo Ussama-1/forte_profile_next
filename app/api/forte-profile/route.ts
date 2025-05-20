@@ -4,7 +4,7 @@ import ForteProfile from "@/app/api/models/ForteProfile";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     await connectMongoDB();
 
@@ -54,6 +54,8 @@ export async function POST(request: Request) {
     try {
       parsedData = JSON.parse(text);
     } catch (e) {
+
+      console.warn(e)
       // If it's not valid JSON, use it as raw text for the OpenAI API
       // Redirect to the OpenAI API with the text and type
       const response = await fetch(`${process.env.NEXTAUTH_URL}/api/openai`, {

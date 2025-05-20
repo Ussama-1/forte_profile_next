@@ -10,7 +10,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     await connectMongoDB();
 

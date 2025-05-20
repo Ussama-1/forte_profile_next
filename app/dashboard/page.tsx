@@ -148,7 +148,7 @@ export default function ForteProfile() {
     try {
       setIsProcessing(true);
 
-      setprogress(0)
+      setprogress(0);
       // Send the extracted text to the OpenAI API
       const response = await fetch("/api/openai", {
         method: "POST",
@@ -289,7 +289,8 @@ export default function ForteProfile() {
                         <TooltipContent className="max-w-xs">
                           <p>
                             Upload your completed Forte assessment document. If
-                            you don't have one, you can complete it manually.
+                            you don&apos;t have one, you can complete it
+                            manually.
                           </p>
                         </TooltipContent>
                       </Tooltip>

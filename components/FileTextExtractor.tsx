@@ -1,16 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import Dropzone from "react-dropzone";
-import { Cloud, File, FileImage, X } from "lucide-react";
+import { Cloud, File, FileImage } from "lucide-react";
 import { createWorker } from "tesseract.js";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import { Progress } from "./ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { ScrollArea } from "./ui/scroll-area";
 
-interface AcceptedFile extends File {
-  // Extending File type if needed
-}
 const FileTextExtractor = ({
   onReturn,
   onprogress,
@@ -29,8 +26,8 @@ const FileTextExtractor = ({
   const extractTextFromPdf = async (file: File): Promise<string> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      // @ts-ignore
-      const pdf = await getDocument({ data: arrayBuffer }).promise;
+      const pdf = await getDocument({ data: new Uint8Array(arrayBuffer) })
+        .promise;
       let fullText = "";
 
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -39,7 +36,6 @@ const FileTextExtractor = ({
 
         const pageText = textContent.items
           .map((item: any) => {
-            // Use 'any' if types are not defined
             if (item && "str" in item) {
               return item.str;
             }
@@ -52,6 +48,7 @@ const FileTextExtractor = ({
 
       return fullText;
     } catch (error) {
+      console.error(error);
       return "";
     }
   };
@@ -86,13 +83,12 @@ const FileTextExtractor = ({
 
         onReturn(allText);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
-    } finally {
     }
   };
 
-  const handleDrop = async (acceptedFiles: AcceptedFile[]) => {
+  const handleDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setloading(true);
       setprogress(0);

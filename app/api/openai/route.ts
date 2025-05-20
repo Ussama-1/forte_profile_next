@@ -161,17 +161,15 @@ export async function POST(request: Request) {
     const parsedResponse = JSON.parse(rawResponse);
     const userId = session.user.id;
 
-    // Save to database based on type
-    let savedData;
     switch (type.toLowerCase()) {
       case "forte profile":
-        savedData = await saveForteProfile(userId, parsedResponse);
+        await saveForteProfile(userId, parsedResponse);
         break;
       case "career profile":
-        savedData = await saveCareerProfile(userId, parsedResponse);
+        await saveCareerProfile(userId, parsedResponse);
         break;
       case "priorities":
-        savedData = await savePriorities(userId, parsedResponse);
+        await savePriorities(userId, parsedResponse);
         break;
     }
 
@@ -188,7 +186,14 @@ export async function POST(request: Request) {
   }
 }
 
-async function saveForteProfile(userId: string, data: any) {
+type ForteProfileData = {
+  purpose: string;
+  strengths: string;
+  motivations: string;
+  passions: string;
+};
+
+async function saveForteProfile(userId: string, data: ForteProfileData) {
   const { purpose, strengths, motivations, passions } = data;
 
   // Find existing profile or create new one
@@ -206,7 +211,13 @@ async function saveForteProfile(userId: string, data: any) {
   return profile;
 }
 
-async function saveCareerProfile(userId: string, data: any) {
+type CareerProfileData = {
+  experienceSummary: string;
+  coreCompetencies: string;
+  admirableOrganizations: string[];
+};
+
+async function saveCareerProfile(userId: string, data: CareerProfileData) {
   const { experienceSummary, coreCompetencies, admirableOrganizations } = data;
 
   // Find existing profile or create new one
@@ -223,7 +234,20 @@ async function saveCareerProfile(userId: string, data: any) {
   return profile;
 }
 
-async function savePriorities(userId: string, data: any) {
+type PriorityItem = {
+  name: string;
+  weight: number;
+  currentScore: number;
+  bestFit: string;
+  mediumFit: string;
+  worstFit: string;
+};
+
+type PrioritiesData = {
+  priorities: PriorityItem[];
+};
+
+async function savePriorities(userId: string, data: PrioritiesData) {
   const { priorities } = data;
 
   // Delete existing priorities
@@ -231,7 +255,7 @@ async function savePriorities(userId: string, data: any) {
 
   // Create new priorities
   const savedPriorities = await Promise.all(
-    priorities.map((priority: any) =>
+    priorities.map((priority: PriorityItem) =>
       Priority.create({
         userId,
         name: priority.name,

@@ -6,7 +6,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
 import bcrypt from "bcryptjs";
 
 // GET user settings
-export async function GET(request: Request) {
+export async function GET() {
   try {
     await connectMongoDB();
 

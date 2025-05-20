@@ -352,7 +352,7 @@ export default function SignIn() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 pt-0">
             <div className="text-sm text-center">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/auth/signup"
                 className="text-teal-600 hover:underline hover:text-teal-700 transition-colors font-medium"

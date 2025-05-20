@@ -69,7 +69,7 @@ interface PasswordData {
 }
 
 export default function Settings() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings>({

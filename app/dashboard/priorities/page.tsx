@@ -33,23 +33,14 @@ interface Priority {
 }
 
 export default function Priorities() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [progress, setprogress] = useState(0);
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [totalWeight, setTotalWeight] = useState(100);
   const [weightedScore, setWeightedScore] = useState(0);
-  const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [aiFormData, setAiFormData] = useState({
-    careerGoals: "",
-    strengths: "",
-    values: "",
-    experience: "",
-    preferences: "",
-  });
 
   // Fetch existing priorities data if available
   useEffect(() => {
@@ -222,14 +213,11 @@ export default function Priorities() {
 
   const generatePriorities = async () => {
     try {
-      setIsGenerating(true);
-
       const response = await fetch("/api/generate-priorities", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(aiFormData),
       });
 
       if (!response.ok) {
@@ -242,7 +230,6 @@ export default function Priorities() {
         // Update priorities with the generated data
         if (data.data.priorities && Array.isArray(data.data.priorities)) {
           setPriorities(data.data.priorities);
-          setAiDialogOpen(false);
 
           toast.success("Priorities generated successfully");
         }
@@ -252,8 +239,6 @@ export default function Priorities() {
     } catch (error) {
       console.error("Error generating priorities:", error);
       toast.error("Failed to generate priorities");
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -351,7 +336,7 @@ export default function Priorities() {
               <TabsContent value="upload" className="space-y-6">
                 <FileTextExtractor
                   onReturn={handleExtractedText}
-                  onprogress={0}
+                  onprogress={progress}
                 />
 
                 <div className="flex justify-end gap-3 mt-6">

@@ -1,15 +1,3 @@
-import Link from "next/link";
-import {
-  BarChart3,
-  FileText,
-  ListChecks,
-  Search,
-  Settings,
-  LogOut,
-  Upload,
-  User2,
-} from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Suspense } from "react";
 import { MobileHeader, MobileSidebar } from "@/components/mobile-sidebar";
 

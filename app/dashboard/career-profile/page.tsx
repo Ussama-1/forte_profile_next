@@ -17,7 +17,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function CareerProfile() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [progress, setprogress] = useState(0);
   const [formData, setFormData] = useState({
