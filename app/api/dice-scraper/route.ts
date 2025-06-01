@@ -622,7 +622,7 @@ interface ScrapingConfig {
 const SCRAPING_CONFIG: ScrapingConfig = {
   headless: true,
   timeout: 60000,
-  maxJobs: 20,
+  maxJobs: 10,
   maxPages: 5,
   viewport: { width: 1680, height: 1050 },
 };
