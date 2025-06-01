@@ -36,7 +36,7 @@ export const authOptions: NextAuthOptions = {
         const { email, password } = credentials!;
 
         try {
-          if (email === "admin@gmail.com" && password === "12345678") {
+          if (email === "admin@gmail.com" && password === "12345678@forte") {
             return { id: "admin", email, name: "Admin", role: "admin" };
           }
 

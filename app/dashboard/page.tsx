@@ -22,7 +22,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function ForteProfile() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -43,9 +43,9 @@ export default function ForteProfile() {
 
   // Fetch existing profile data if available
   useEffect(() => {
-    if (status === "authenticated") {
+    if (session) {
       fetchProfileData();
-    } else if (status === "unauthenticated") {
+    } else {
       router.push("/auth/signin");
     }
   }, [status, router]);
