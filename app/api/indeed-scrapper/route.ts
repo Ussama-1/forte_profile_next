@@ -1,6 +1,8 @@
 // import { NextRequest, NextResponse } from "next/server";
 // import puppeteer, { Browser, Page, executablePath } from "puppeteer";
 
+import { NextRequest, NextResponse } from "next/server";
+
 // interface JobData {
 //   title: string;
 //   company: string;
@@ -480,8 +482,6 @@
 
 // export const runtime = "nodejs";
 
-
-
 // import { NextRequest, NextResponse } from "next/server";
 // import puppeteer, { Browser, Page, executablePath } from "puppeteer";
 
@@ -605,24 +605,24 @@
 
 // const setupPage = async (browser: Browser): Promise<Page> => {
 //   const page = await browser.newPage();
-  
+
 //   await page.evaluateOnNewDocument(() => {
 //     Object.defineProperty(navigator, 'webdriver', {
 //       get: () => undefined,
 //     });
-    
+
 //     (window).chrome = {
 //       runtime: {},
 //     };
-    
+
 //     Object.defineProperty(navigator, 'plugins', {
 //       get: () => [1, 2, 3, 4, 5],
 //     });
-    
+
 //     Object.defineProperty(navigator, 'languages', {
 //       get: () => ['en-US', 'en'],
 //     });
-    
+
 //     const originalQuery = window.navigator.permissions.query;
 //     return window.navigator.permissions.query = (parameters) => (
 //       parameters.name === 'notifications' ?
@@ -632,7 +632,7 @@
 //   });
 
 //   await page.setUserAgent(getRandomUserAgent());
-  
+
 //   await page.setExtraHTTPHeaders({
 //     "Accept-Language": "en-US,en;q=0.9",
 //     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
@@ -682,8 +682,8 @@
 
 //   const randomAction = actions[Math.floor(Math.random() * actions.length)];
 //   await randomAction();
-  
-//   await new Promise(resolve => 
+
+//   await new Promise(resolve =>
 //     setTimeout(resolve, Math.random() * 3000 + 1000)
 //   );
 // };
@@ -695,15 +695,15 @@
 //     const checkbox = await page
 //       .waitForSelector('.cb-lb input[type="checkbox"]', { timeout: 5000 })
 //       .catch(() => null);
-      
+
 //     if (checkbox) {
 //       console.log(`Attempt ${attempt}: Verification detected, applying advanced human simulation...`);
-      
+
 //       await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-      
+
 //       await page.mouse.move(Math.random() * 200 + 100, Math.random() * 200 + 100, { steps: 20 });
 //       await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-      
+
 //       const box = await checkbox.boundingBox();
 //       if (box) {
 //         const x = box.x + box.width / 2 + (Math.random() - 0.5) * 5;
@@ -712,7 +712,7 @@
 //         await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200));
 //         await page.mouse.click(x, y, { delay: Math.random() * 100 + 50 });
 //       }
-      
+
 //       await page.waitForFunction(
 //         () =>
 //           !document.querySelector('.cb-lb input[type="checkbox"]') ||
@@ -722,9 +722,9 @@
 //           document.querySelector("#expired"),
 //         { timeout: 45000 }
 //       );
-      
+
 //       const success = !(await page.$('.cb-lb input[type="checkbox"]')) || (await page.$("#success"));
-      
+
 //       if (success) {
 //         console.log("Verification successful.");
 //         await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 2000));
@@ -835,7 +835,7 @@
 // ): Promise<JobData | null> => {
 //   try {
 //     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-    
+
 //     await page.goto(applyLink, {
 //       waitUntil: "domcontentloaded",
 //       timeout: 30000,
@@ -910,7 +910,7 @@
 //     const url = buildIndeedUrl(q, l, from, jt, remotejob, radius, sort);
 
 //     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-    
+
 //     await page.goto(url, {
 //       waitUntil: "domcontentloaded",
 //       timeout: 30000,
@@ -952,7 +952,7 @@
 //           page.click('a[data-testid="pagination-page-next"]'),
 //           page.waitForSelector("#mosaic-provider-jobcards", { timeout: 15000 }),
 //         ]);
-//         await new Promise(resolve => 
+//         await new Promise(resolve =>
 //           setTimeout(resolve, Math.random() * 3000 + 3000)
 //         );
 //       } catch (error) {
@@ -968,7 +968,7 @@
 //       if (jobDetails) {
 //         allJobs.push(jobDetails);
 //       }
-//       await new Promise(resolve => 
+//       await new Promise(resolve =>
 //         setTimeout(resolve, Math.random() * 3000 + 2000)
 //       );
 //     }
@@ -1045,3 +1045,30 @@
 // };
 
 // export const runtime = "nodejs";
+
+export const GET = async (request: NextRequest): Promise<NextResponse> => {
+  try {
+    const { searchParams } = new URL(request.url);
+    console.log(searchParams);
+    return NextResponse.json(
+      {
+        success: true,
+      },
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json(
+      {
+        success: false,
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+};

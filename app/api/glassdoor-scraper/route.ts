@@ -1,6 +1,8 @@
 // import { NextRequest, NextResponse } from "next/server";
 // import puppeteer, { Browser, Page, executablePath } from "puppeteer";
 
+import { NextRequest, NextResponse } from "next/server";
+
 // interface JobData {
 //   title: string;
 //   company: string;
@@ -498,8 +500,6 @@
 // };
 
 // export const runtime = "nodejs";
-
-
 
 // import { NextRequest, NextResponse } from "next/server";
 // import puppeteer, { Browser, Page, executablePath } from "puppeteer";
@@ -1080,40 +1080,31 @@
 //   }
 // };
 
-// export const GET = async (request: NextRequest): Promise<NextResponse> => {
-//   try {
-//     const { searchParams } = new URL(request.url);
-//     const params = validateSearchParams(searchParams);
-
-//     const jobs = await scrapeGlassdoorJobs(params);
-
-//     return NextResponse.json(
-//       {
-//         success: true,
-//         data: jobs,
-//         metadata: {
-//           totalJobs: jobs.length,
-//           searchParams: params,
-//           scrapedAt: new Date().toISOString(),
-//         },
-//       },
-//       {
-//         status: 200,
-//         headers: { "Content-Type": "application/json" },
-//       }
-//     );
-//   } catch (error) {
-//     const errorMessage =
-//       error instanceof Error ? error.message : "Internal server error";
-//     return NextResponse.json(
-//       {
-//         success: false,
-//         error: errorMessage,
-//         timestamp: new Date().toISOString(),
-//       },
-//       { status: 500 }
-//     );
-//   }
-// };
+export const GET = async (request: NextRequest): Promise<NextResponse> => {
+  try {
+    const { searchParams } = new URL(request.url);
+    console.log(searchParams)
+    return NextResponse.json(
+      {
+        success: true,
+      },
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json(
+      {
+        success: false,
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+};
 
 // export const runtime = "nodejs";
