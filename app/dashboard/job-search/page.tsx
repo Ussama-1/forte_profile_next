@@ -135,7 +135,7 @@ export default function JobSearch() {
 
       // Get selected job platforms
       const selectedPlatforms = Object.entries(formData.jobSites)
-        .filter(([isSelected]) => isSelected)
+        .filter(([, isSelected]) => isSelected)
         .map(([platform]) => platform);
 
       if (selectedPlatforms.length === 0) {
@@ -256,17 +256,19 @@ export default function JobSearch() {
       if (analysisData.success && analysisData.data) {
         // Combine scraped jobs with AI analysis results
         const processedJobs: ProcessedJob[] = allJobs.map((job, index) => {
-            const analysis: {
-            jobIndex: number;
-            overallScore: number;
-            priorityBreakdown: Array<{
-              priorityName: string;
-              score: number;
-              reasoning: string;
-            }>;
-            } | undefined = analysisData.data.find(
+          const analysis:
+            | {
+                jobIndex: number;
+                overallScore: number;
+                priorityBreakdown: Array<{
+                  priorityName: string;
+                  score: number;
+                  reasoning: string;
+                }>;
+              }
+            | undefined = analysisData.data.find(
             (a: { jobIndex: number }) => a.jobIndex === index
-            );
+          );
 
           return {
             ...job,
