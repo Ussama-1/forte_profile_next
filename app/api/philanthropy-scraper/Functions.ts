@@ -27,7 +27,7 @@ export interface QueryParams {
 }
 
 const SCRAPING_CONFIG: ScrapingConfig = {
-  headless: false,
+  headless: true,
   timeout: 60000,
   maxJobs: 5, // Limiting to 10 jobs for this example
   viewport: { width: 1280, height: 800 },
