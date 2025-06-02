@@ -25,8 +25,9 @@ import { Progress } from "@/components/ui/progress";
 
 const jobPlatformEntries = [
   { key: "dice", label: "Dice" },
-  { key: "linkedin", label: "LinkedIn" },
   { key: "nploy", label: "NPloy" },
+  { key: "philanthropy", label: "Philanthropy" },
+  { key: "linkedin", label: "LinkedIn" },
   { key: "indeed", label: "Indeed" },
   { key: "wellfound", label: "Wellfound" },
   { key: "glassdoor", label: "Glassdoor" },
@@ -38,7 +39,7 @@ const jobPlatformApiMap: Record<string, string> = {
   // indeed: "/api/indeed-scrapper",
   linkedin: "/api/linkedin-scrapper",
   // wellfound: "/api/wellfound-scraper",
-  // glassdoor: "/api/glassdoor-scraper",
+  philanthropy: "/api/philanthropy-scraper",
   nploy: "/api/nploy-scraper",
   dice: "/api/dice-scraper",
   // ziprecruiter: "/api/ziprecruiter-scraper", // Add when available
