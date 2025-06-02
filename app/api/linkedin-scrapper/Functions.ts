@@ -66,10 +66,10 @@ const humanTypeText = async (
 declare global {
   interface Window {
     chrome: {
-      runtime: any;
+      runtime;
       loadTimes(): void;
       csi(): void;
-      app: any;
+      app;
     };
   }
 }
