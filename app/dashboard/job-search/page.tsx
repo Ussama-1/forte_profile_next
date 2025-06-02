@@ -26,6 +26,7 @@ import { Progress } from "@/components/ui/progress";
 const jobPlatformEntries = [
   { key: "dice", label: "Dice" },
   { key: "linkedin", label: "LinkedIn" },
+  { key: "nploy", label: "NPloy" },
   { key: "indeed", label: "Indeed" },
   { key: "wellfound", label: "Wellfound" },
   { key: "glassdoor", label: "Glassdoor" },
@@ -38,7 +39,7 @@ const jobPlatformApiMap: Record<string, string> = {
   linkedin: "/api/linkedin-scrapper",
   // wellfound: "/api/wellfound-scraper",
   // glassdoor: "/api/glassdoor-scraper",
-  // monster: "/api/monster-scraper",
+  nploy: "/api/nploy-scraper",
   dice: "/api/dice-scraper",
   // ziprecruiter: "/api/ziprecruiter-scraper", // Add when available
 };
@@ -166,7 +167,6 @@ export default function JobSearch() {
         }
 
         try {
-          
           const response = await fetch(`${apiUrl}?${searchParams}`, {
             method: "GET",
             headers: {

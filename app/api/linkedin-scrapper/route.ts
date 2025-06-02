@@ -78,7 +78,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
                   Final Output Format
                   Return your results as a JSON object in the following structure always give response in strict following formate:
                   {
-                    jobtitle: "Your Suggested Job Title",
+                    jobtitle: "Your Suggested Job Title //never give two title i.e software engineer and full stack dev only give one title like Ai engineer or software engineer ",
                     jobtype: "F,C",
                     Experience: "2,3",
                     RemoteFilter: "2,3",

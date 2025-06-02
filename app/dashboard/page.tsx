@@ -48,7 +48,7 @@ export default function ForteProfile() {
     } else {
       router.push("/auth/signin");
     }
-  }, [status, router]);
+  }, [session]);
 
   const fetchProfileData = async () => {
     try {
