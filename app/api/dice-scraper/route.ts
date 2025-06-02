@@ -577,6 +577,7 @@ import CareerProfile from "../models/CareerProfile";
 import ForteProfile from "../models/ForteProfile";
 import Priority from "../models/Priority";
 import { OpenAI } from "openai";
+export const runtime = "nodejs";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -653,8 +654,6 @@ const humanDelay = (min = 800, max = 3000): Promise<void> => {
   const delay = Math.floor(Math.random() * (max - min + 1)) + min;
   return new Promise((resolve) => setTimeout(resolve, delay));
 };
-
-
 
 const createBrowser = async (): Promise<Browser> => {
   const viewport = getRandomViewport();
@@ -751,7 +750,7 @@ const setupPage = async (browser: Browser): Promise<Page> => {
       chrome: Chrome;
     }
 
-    ((window as unknown) as Window).chrome = {
+    (window as unknown as Window).chrome = {
       runtime: {},
       loadTimes: function () {
         return {};
@@ -1282,5 +1281,3 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     );
   }
 };
-
-export const runtime = "nodejs";

@@ -7,6 +7,8 @@ import Priority from "@/app/api/models/Priority";
 import { connectMongoDB } from "@/app/api/lib/dbConnection";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/auth";
+export const runtime = "nodejs";
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
@@ -28,7 +30,6 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
         { status: 401 }
       );
     }
-
 
     const careerProfile = await CareerProfile.find({
       userId: session?.user?.id,
@@ -187,5 +188,3 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     );
   }
 };
-
-export const runtime = "nodejs";

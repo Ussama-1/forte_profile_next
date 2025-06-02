@@ -166,7 +166,8 @@ export default function JobSearch() {
         }
 
         try {
-          const response = await fetch(`${apiUrl}?${searchParams}`, {
+          const BASE_URL = process.env.NEXTAUTH_URL;
+          const response = await fetch(`${BASE_URL}${apiUrl}?${searchParams}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
