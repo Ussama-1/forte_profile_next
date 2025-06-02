@@ -166,8 +166,8 @@ export default function JobSearch() {
         }
 
         try {
-          const BASE_URL = "fortequantumleap.com/";
-          const response = await fetch(`${BASE_URL}${apiUrl}?${searchParams}`, {
+          
+          const response = await fetch(`${apiUrl}?${searchParams}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
