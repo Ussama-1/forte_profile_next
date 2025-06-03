@@ -29,7 +29,7 @@ export interface QueryParams {
 const SCRAPING_CONFIG: ScrapingConfig = {
   headless: true,
   timeout: 60000,
-  maxJobs: 5, // Limiting to 10 jobs for this example
+  maxJobs: 30, // Limiting to 10 jobs for this example
   viewport: { width: 1280, height: 800 },
   scrollDelay: 2000,
   visitDelay: 2000,

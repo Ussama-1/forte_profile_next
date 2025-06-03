@@ -3,7 +3,7 @@ import puppeteer, { Browser, Page, executablePath } from "puppeteer";
 interface JobData {
   title: string;
   company: string;
-  jobType: string[]; // [remote, hybrid, onsite]
+  jobType: string[]; 
   description: string;
   location: string;
   applyLink: string;
@@ -31,7 +31,7 @@ interface QueryParams {
 const SCRAPING_CONFIG: ScrapingConfig = {
   headless: true,
   timeout: 60000,
-  maxJobs: 20,
+  maxJobs: 30,
   viewport: { width: 1680, height: 1050 },
   scrollDelay: 2000,
   visitDelay: 2000,
