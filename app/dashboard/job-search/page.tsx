@@ -27,6 +27,7 @@ const jobPlatformEntries = [
   { key: "dice", label: "Dice" },
   { key: "nploy", label: "NPloy" },
   { key: "philanthropy", label: "Philanthropy" },
+  { key: "foundationlist", label: "Foundation List" },
   { key: "linkedin", label: "LinkedIn" },
   { key: "indeed", label: "Indeed" },
   { key: "wellfound", label: "Wellfound" },
@@ -36,7 +37,7 @@ const jobPlatformEntries = [
 ];
 
 const jobPlatformApiMap: Record<string, string> = {
-  // indeed: "/api/indeed-scrapper",
+  foundationlist: "/api/foundationlist-scraper",
   linkedin: "/api/linkedin-scrapper",
   // wellfound: "/api/wellfound-scraper",
   philanthropy: "/api/philanthropy-scraper",
