@@ -1,1074 +1,488 @@
+// // app/api/scrape-jobs/route.ts
 // import { NextRequest, NextResponse } from "next/server";
-// import puppeteer, { Browser, Page, executablePath } from "puppeteer";
+// import puppeteer, { Browser, Page } from "puppeteer";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 // interface JobData {
 //   title: string;
 //   company: string;
-//   location: string;
 //   jobType: string[];
 //   description: string;
+//   location: string;
 //   applyLink: string;
 // }
 
-// interface ScrapingConfig {
-//   headless: boolean;
-//   timeout: number;
-//   maxJobs: number;
-//   maxPages: number;
-//   viewport: {
-//     width: number;
-//     height: number;
-//   };
+// interface ScrapeJobsRequest {
+//   maxJobs?: number;
+//   headless?: boolean;
 // }
 
-// const SCRAPING_CONFIG: ScrapingConfig = {
-//   headless: false,
-//   timeout: 60000,
-//   maxJobs: 10,
-//   maxPages: 2,
-//   viewport: { width: 1366, height: 768 },
-// };
+// class HumanLikeIndeedScraper {
+//   private browser: Browser | null = null;
+//   private page: Page | null = null;
 
-// const validateSearchParams = (searchParams: URLSearchParams) => {
-//   const q = searchParams.get("q")?.trim();
-//   const l = searchParams.get("l")?.trim() || "United States";
-//   const from = searchParams.get("from")?.trim() || "fromtoday";
-//   const jt = searchParams.get("jt")?.trim() || "fulltime";
-//   const remotejob = searchParams.get("remotejob")?.trim() || "1";
-//   const radius = searchParams.get("radius")?.trim() || "25";
-//   const sort = searchParams.get("sort")?.trim() || "date";
-
-//   if (!q || q.length < 2) {
-//     throw new Error("Job title (q) must be at least 2 characters long");
-//   }
-
-//   if (
-//     q.length > 100 ||
-//     l.length > 100 ||
-//     from.length > 50 ||
-//     jt.length > 50 ||
-//     remotejob.length > 50 ||
-//     radius.length > 50 ||maxAttempts
-//     sort.length > 50
-//   ) {
-//     throw new Error("Search parameters too long");
-//   }
-
-//   if (!["fromtoday", "lastweek", "lastmonth"].includes(from)) {
-//     throw new Error(
-//       "Invalid time posted (from). Use fromtoday, lastweek, or lastmonth."
-//     );
-//   }
-//   if (
-//     !["fulltime", "parttime", "contract", "temporary", "internship"].includes(
-//       jt
-//     )
-//   ) {
-//     throw new Error(
-//       "Invalid job type (jt). Use fulltime, parttime, contract, temporary, or internship."
-//     );
-//   }
-//   if (!["0", "1"].includes(remotejob)) {
-//     throw new Error("Invalid remote filter (remotejob). Use 0 or 1.");
-//   }
-//   if (!/^\d+$/.test(radius)) {
-//     throw new Error("Invalid radius. Use a number (e.g., 25).");
-//   }
-//   if (!["date", "relevance"].includes(sort)) {
-//     throw new Error("Invalid sort order (sort). Use date or relevance.");
-//   }
-
-//   return { q, l, from, jt, remotejob, radius, sort };
-// };
-
-// const createBrowser = async (): Promise<Browser> => {
-//   const browser = await puppeteer.launch({
-//     headless: SCRAPING_CONFIG.headless,
-//     executablePath: executablePath(),
-//     args: [
-//       "--no-sandbox",
-//       "--disable-setuid-sandbox",
-//       "--disable-dev-shm-usage",
-//       "--disable-accelerated-2d-canvas",
-//       "--no-first-run",
-//       "--no-zygote",
-//       "--disable-gpu",
-//       "--window-size=1366,768",
-//     ],
-//     defaultViewport: null,
-//   });
-//   return browser;
-// };
-
-// const setupPage = async (browser: Browser): Promise<Page> => {
-//   const page = await browser.newPage();
-//   await page.setUserAgent(
-//     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-//   );
-//   await page.setExtraHTTPHeaders({
-//     "Accept-Language": "en-US,en;q=0.9",
-//     Accept:
-//       "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-//   });
-//   return page;
-// };
-
-// const simulateHumanBehavior = async (page: Page): Promise<void> => {
-//   const { width, height } = SCRAPING_CONFIG.viewport;
-//   const x = Math.random() * width;
-//   const y = Math.random() * height;
-//   await page.mouse.move(x, y, { steps: 10 });
-//   await page.evaluate(() => window.scrollBy(0, Math.random() * 500));
-//   await new Promise((resolve) =>
-//     setTimeout(resolve, 1000 + Math.random() * 2000)
-//   );
-// };
-
-// const handleVerification = async (page: Page, attempt = 1): Promise<void> => {
-//   try {
-//     const maxAttempts = 5;
-//     const checkbox = await page
-//       .waitForSelector('.cb-lb input[type="checkbox"]', { timeout: 10000 })
-//       .catch(() => null);
-//     if (checkbox) {
-//       console.log(
-//         `Attempt ${attempt}: Verification checkbox detected, simulating human behavior...`
-//       );
-//       await simulateHumanBehavior(page);
-//       await checkbox.click();
-//       await page.waitForFunction(
-//         () =>
-//           !document.querySelector('.cb-lb input[type="checkbox"]') ||
-//           document.querySelector("#success") ||
-//           document.querySelector("#fail") ||
-//           document.querySelector("#timeout") ||
-//           document.querySelector("#expired"),
-//         { timeout: 30000 }
-//       );
-//       const success =
-//         !(await page.$('.cb-lb input[type="checkbox"]')) ||
-//         (await page.$("#success"));
-//       if (success) {
-//         console.log("Verification successful.");
-//         await new Promise((resolve) => setTimeout(resolve, 3000));
-//       } else {
-//         throw new Error("Verification failed or timed out.");
-//       }
-//     } else if (attempt < maxAttempts) {
-//       console.log(
-//         `Attempt ${attempt} failed: No checkbox found, retrying in 5 seconds...`
-//       );
-//       await new Promise((resolve) => setTimeout(resolve, 5000));
-//       await handleVerification(page, attempt + 1);
-//     } else {
-//       console.log(
-//         "Max verification attempts reached, proceeding without verification."
-//       );
-//     }
-//   } catch (error) {
-//     console.error("Verification error:", error);
-//     await page
-//       .screenshot({ path: `verification_error_attempt_${attempt}.png` })
-//       .catch(() => {});
-//     throw new Error(
-//       `Failed to handle verification: ${
-//         error instanceof Error ? error.message : "Unknown error"
-//       }`
-//     );
-//   }
-// };
-
-// // [Rest of the functions (buildIndeedUrl, scrollJobList, extractJobLinks, extractJobDetails, scrapeIndeedJobs, GET) remain the same as in the previous version]
-// const buildIndeedUrl = (
-//   q: string,
-//   l: string,
-//   from: string,
-//   jt: string,
-//   remotejob: string,
-//   radius: string,
-//   sort: string
-// ): string => {
-//   const baseUrl = "https://www.indeed.com/jobs";
-//   const params = new URLSearchParams({
-//     q,
-//     l,
-//     from,
-//     jt,
-//     remotejob,
-//     radius,
-//     sort,
-//   });
-//   return `${baseUrl}?${params.toString()}`;
-// };
-
-// const scrollJobList = async (page: Page): Promise<void> => {
-//   try {
-//     await page.waitForSelector("#mosaic-provider-jobcards", { timeout: 15000 });
-
-//     let previousJobCount = 0;
-//     let sameCount = 0;
-//     const maxSameCount = 3;
-
-//     while (sameCount < maxSameCount) {
-//       const jobCount = await page.evaluate(() => {
-//         const jobList = document.querySelector("#mosaic-provider-jobcards ul");
-//         return jobList ? jobList.querySelectorAll("li").length : 0;
+//   async initialize(headless: boolean = true): Promise<void> {
+//     try {
+//       this.browser = await puppeteer.launch({
+//         headless,
+//         args: [
+//           "--no-sandbox",
+//           "--disable-setuid-sandbox",
+//           "--disable-dev-shm-usage",
+//           "--disable-accelerated-2d-canvas",
+//           "--no-first-run",
+//           "--no-zygote",
+//           "--disable-gpu",
+//           "--disable-blink-features=AutomationControlled",
+//           "--disable-features=VizDisplayCompositor",
+//           "--disable-extensions",
+//           "--disable-plugins",
+//           "--disable-images",
+//           "--window-size=1366,768",
+//           "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+//           "--accept-lang=en-US,en;q=0.9",
+//           "--disable-background-timer-throttling",
+//           "--disable-backgrounding-occluded-windows",
+//           "--disable-renderer-backgrounding",
+//         ],
+//         defaultViewport: null,
+//         ignoreDefaultArgs: ["--enable-automation"],
 //       });
 
-//       if (jobCount === previousJobCount) {
-//         sameCount++;
-//       } else {
-//         sameCount = 0;
+//       this.page = await this.browser.newPage();
+
+//       await this.page.evaluateOnNewDocument(() => {
+//         Object.defineProperty(navigator, "webdriver", {
+//           get: () => undefined,
+//         });
+
+//         Object.defineProperty(navigator, "plugins", {
+//           get: () => [1, 2, 3, 4, 5],
+//         });
+
+//         Object.defineProperty(navigator, "languages", {
+//           get: () => ["en-US", "en"],
+//         });
+
+//         window.chrome = {
+//           runtime: {},
+//         };
+
+//         Object.defineProperty(navigator, "permissions", {
+//           get: () => ({
+//             query: () => Promise.resolve({ state: "granted" }),
+//           }),
+//         });
+//       });
+
+//       const userAgents = [
+//         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+//         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+//         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+//         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
+//       ];
+
+//       const randomUserAgent =
+//         userAgents[Math.floor(Math.random() * userAgents.length)];
+//       await this.page.setUserAgent(randomUserAgent);
+
+//       await this.page.setViewport({
+//         width: 1366 + Math.floor(Math.random() * 100),
+//         height: 768 + Math.floor(Math.random() * 100),
+//       });
+
+//       await this.page.setExtraHTTPHeaders({
+//         Accept:
+//           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+//         "Accept-Language": "en-US,en;q=0.9",
+//         "Accept-Encoding": "gzip, deflate, br",
+//         DNT: "1",
+//         Connection: "keep-alive",
+//         "Upgrade-Insecure-Requests": "1",
+//       });
+//     } catch (error) {
+//       throw new Error(`Browser initialization failed: ${error}`);
+//     }
+//   }
+
+//   private async humanDelay(
+//     min: number = 1000,
+//     max: number = 3000
+//   ): Promise<void> {
+//     const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+//     await new Promise((resolve) => setTimeout(resolve, delay));
+//   }
+
+//   private async humanMouseMovement(): Promise<void> {
+//     if (!this.page) return;
+
+//     const viewport = this.page.viewport();
+//     if (!viewport) return;
+
+//     // More realistic mouse movements - slower and more natural
+//     for (let i = 0; i < Math.floor(Math.random() * 3) + 2; i++) {
+//       const x = Math.floor(Math.random() * viewport.width);
+//       const y = Math.floor(Math.random() * viewport.height);
+
+//       // Slower, more human-like mouse movement
+//       await this.page.mouse.move(x, y, {
+//         steps: Math.floor(Math.random() * 15) + 10,
+//       });
+//       await this.humanDelay(200, 800);
+
+//       // Occasionally pause like a human would
+//       if (Math.random() > 0.8) {
+//         await this.humanDelay(500, 1200);
 //       }
+//     }
+//   }
 
-//       previousJobCount = jobCount;
+//   private async humanScroll(): Promise<void> {
+//     if (!this.page) return;
 
-//       await page.evaluate(() => {
-//         const jobList = document.querySelector("#mosaic-provider-jobcards ul");
-//         if (jobList) {
-//           jobList.scrollIntoView({ behavior: "smooth", block: "end" });
-//           window.scrollBy(0, window.innerHeight);
+//     const scrolls = Math.floor(Math.random() * 3) + 1;
+
+//     for (let i = 0; i < scrolls; i++) {
+//       const scrollDistance = Math.floor(Math.random() * 500) + 200;
+
+//       await this.page.evaluate((distance) => {
+//         window.scrollBy(0, distance);
+//       }, scrollDistance);
+
+//       await this.humanDelay(500, 1500);
+//     }
+//   }
+
+//   private async simulateHumanBehavior(): Promise<void> {
+//     await Promise.all([this.humanMouseMovement(), this.humanDelay(300, 800)]);
+
+//     // More frequent human-like actions
+//     if (Math.random() > 0.5) {
+//       await this.humanScroll();
+//     }
+
+//     // Simulate reading pauses
+//     if (Math.random() > 0.7) {
+//       await this.humanDelay(500, 1500);
+//     }
+//   }
+
+//   async scrapeJobUrls(maxJobs: number = 20): Promise<string[]> {
+//     if (!this.page) throw new Error("Page not initialized");
+
+//     const targetUrl =
+//       "https://www.google.com/search?q=indeed+jobs+last+3+days&udm=8&jbr=sep:0&sei=6Ow_aK2-I6vi7M8Pu_-K4Ag#vhid=vt%3D20/docid%3DwNBR55SS8bTX40x5AAAAAA%3D%3D&vssid=jobs-detail-viewer";
+
+//     try {
+//       console.log("Navigating to Google Jobs...");
+
+//       await this.page.goto("https://www.google.com", {
+//         waitUntil: "networkidle2",
+//         timeout: 30000,
+//       });
+
+//       await this.simulateHumanBehavior();
+//       await this.humanDelay(6000, 8000);
+
+//       await this.page.goto(targetUrl, {
+//         waitUntil: "networkidle2",
+//         timeout: 30000,
+//       });
+
+//       await this.simulateHumanBehavior();
+
+//       console.log("Waiting for job results to load...");
+//       await this.page.waitForSelector('div[data-id="jobs-detail-viewer"]', {
+//         timeout: 20000,
+//       });
+
+//       const jobUrls: string[] = [];
+//       let previousJobCount = 0;
+//       let scrollAttempts = 0;
+//       const maxScrollAttempts = 8;
+
+//       while (jobUrls.length < maxJobs && scrollAttempts < maxScrollAttempts) {
+//         await this.simulateHumanBehavior();
+
+//         const currentUrls = await this.page.evaluate(() => {
+//           // Primary selector: Look for job links in the specific DOM structure
+//           let jobElements = document.querySelectorAll(
+//             'div[jsname="iTtkOe"] div[data-hveid="CCUQDA"] .EimVGf .L5NwLd div div div a'
+//           );
+
+//           // Fallback selectors if primary doesn't work
+//           if (jobElements.length === 0) {
+//             jobElements = document.querySelectorAll(
+//               'div[jsname="iTtkOe"] div[data-hveid] .EimVGf .L5NwLd a'
+//             );
+//           }
+
+//           if (jobElements.length === 0) {
+//             jobElements = document.querySelectorAll(
+//               'div[jsname="iTtkOe"] a[href*="indeed.com"]'
+//             );
+//           }
+
+//           console.log(`Found ${jobElements.length} job link elements`);
+
+//           return Array.from(jobElements)
+//             .map((element) => {
+//               const href = element.getAttribute("href");
+//               if (!href) return null;
+
+//               // Handle Google redirect URLs
+//               if (href.startsWith("/url?q=")) {
+//                 try {
+//                   const urlParams = new URLSearchParams(href.substring(6));
+//                   const actualUrl = urlParams.get("q");
+//                   return actualUrl ? decodeURIComponent(actualUrl) : null;
+//                 } catch (e) {
+//                   console.error("Error parsing redirect URL:", href);
+//                   return null;
+//                 }
+//               }
+
+//               // Handle direct URLs
+//               if (href.startsWith("http")) {
+//                 return href;
+//               }
+
+//               // Handle relative URLs
+//               return `https://www.google.com${href}`;
+//             })
+//             .filter(Boolean) as string[];
+//         });
+
+//         console.log(`Extracted ${currentUrls.length} job URLs in this batch`);
+
+//         currentUrls.forEach((url) => {
+//           if (!jobUrls.includes(url) && jobUrls.length < maxJobs) {
+//             jobUrls.push(url);
+//           }
+//         });
+
+//         console.log(`Found ${jobUrls.length} job URLs so far...`);
+
+//         if (jobUrls.length === previousJobCount) {
+//           scrollAttempts++;
+//         } else {
+//           scrollAttempts = 0;
+//           previousJobCount = jobUrls.length;
 //         }
-//       });
 
-//       await new Promise((resolve) =>
-//         setTimeout(resolve, 2000 + Math.random() * 2000)
-//       );
-//       await simulateHumanBehavior(page);
-//     }
+//         await this.page.evaluate(() => {
+//           const infinityScrolling =
+//             document.querySelector("infinity-scrolling");
+//           if (infinityScrolling) {
+//             infinityScrolling.scrollIntoView({
+//               behavior: "smooth",
+//               block: "end",
+//             });
+//           } else {
+//             window.scrollBy(0, window.innerHeight * 0.8);
+//           }
+//         });
 
-//     console.log(`Scrolled job list, loaded ${previousJobCount} jobs`);
-//   } catch (error) {
-//     console.error("Error scrolling job list:", error);
-//   }
-// };
+//         await this.humanDelay(2000, 4000);
 
-// const extractJobLinks = async (page: Page): Promise<string[]> => {
-//   try {
-//     await page.waitForSelector("#mosaic-provider-jobcards", { timeout: 15000 });
-
-//     const links = await page.evaluate(() => {
-//       const jobCards = Array.from(
-//         document.querySelectorAll("#mosaic-provider-jobcards a.tapItem")
-//       );
-//       return jobCards
-//         .map((card) => {
-//           const href = card.getAttribute("href") || "";
-//           return href.startsWith("/") ? `https://www.indeed.com${href}` : href;
-//         })
-//         .filter((link) => link);
-//     });
-
-//     return links;
-//   } catch (error) {
-//     console.error("Error extracting job links:", error);
-//     return [];
-//   }
-// };
-
-// const extractJobDetails = async (
-//   page: Page,
-//   applyLink: string
-// ): Promise<JobData | null> => {
-//   try {
-//     await page.goto(applyLink, {
-//       waitUntil: "domcontentloaded",
-//       timeout: 30000,
-//     });
-
-//     await handleVerification(page);
-
-//     await page.waitForSelector("#jobDescriptionText", { timeout: 15000 });
-
-//     const jobDetails = await page.evaluate(() => {
-//       const titleElement = document.querySelector(
-//         "h1.jobsearch-JobInfoHeader-title"
-//       );
-//       const companyElement = document.querySelector(
-//         ".jobsearch-CompanyInfoContainer a, .jobsearch-CompanyInfoContainer div[data-company-name]"
-//       );
-//       const locationElement = document.querySelector(
-//         ".jobsearch-JobInfoHeader-subtitle div:not([class])"
-//       );
-//       const jobTypeElements = document.querySelectorAll(
-//         ".jobsearch-JobMetadataHeader-item, .jobsearch-JobMetadataHeader-itemWithIcon"
-//       );
-//       const descriptionElement = document.querySelector("#jobDescriptionText");
-
-//       const title = titleElement?.textContent?.trim() || "";
-//       const company = companyElement?.textContent?.trim() || "";
-//       const location = locationElement?.textContent?.trim() || "";
-//       const jobType = Array.from(jobTypeElements)
-//         .map((el) => el.textContent?.trim() || "")
-//         .filter(Boolean);
-//       const description = descriptionElement
-//         ? descriptionElement.outerHTML
-//         : "";
-
-//       return { title, company, location, jobType, description };
-//     });
-
-//     if (!jobDetails.description) {
-//       console.warn(`No description found for ${applyLink}`);
-//     }
-
-//     return {
-//       title: jobDetails.title,
-//       company: jobDetails.company,
-//       location: jobDetails.location,
-//       jobType: jobDetails.jobType,
-//       description: jobDetails.description,
-//       applyLink,
-//     };
-//   } catch (error) {
-//     console.error(`Error extracting details for ${applyLink}:`, error);
-//     await page
-//       .screenshot({ path: `job_error_${applyLink.split("/").pop()}.png` })
-//       .catch(() => {});
-//     return null;
-//   }
-// };
-
-// const scrapeIndeedJobs = async (
-//   q: string,
-//   l: string,
-//   from: string,
-//   jt: string,
-//   remotejob: string,
-//   radius: string,
-//   sort: string
-// ): Promise<JobData[]> => {
-//   let browser: Browser | null = null;
-
-//   try {
-//     browser = await createBrowser();
-//     const page = await setupPage(browser);
-
-//     const url = buildIndeedUrl(q, l, from, jt, remotejob, radius, sort);
-
-//     await page.goto(url, {
-//       waitUntil: "domcontentloaded",
-//       timeout: 30000,
-//     });
-
-//     await handleVerification(page);
-
-//     let allLinks: string[] = [];
-//     const seenLinks = new Set<string>();
-
-//     for (let pageNum = 0; pageNum < SCRAPING_CONFIG.maxPages; pageNum++) {
-//       console.log(`Scraping page ${pageNum + 1}...`);
-
-//       await scrollJobList(page);
-
-//       let links = await extractJobLinks(page);
-
-//       links = links.filter((link) => {
-//         if (seenLinks.has(link)) return false;
-//         seenLinks.add(link);
-//         return true;
-//       });
-
-//       allLinks = allLinks.concat(links);
-
-//       const nextButton = await page.$(
-//         'a[data-testid="pagination-page-next"]:not([disabled])'
-//       );
-
-//       if (!nextButton || allLinks.length >= SCRAPING_CONFIG.maxJobs) {
-//         console.log("No more pages or max jobs reached.");
-//         break;
+//         if (Math.random() > 0.8) {
+//           await this.simulateHumanBehavior();
+//         }
 //       }
 
+//       console.log(`Successfully collected ${jobUrls.length} job URLs`);
+//       return jobUrls.slice(0, maxJobs);
+//     } catch (error) {
+//       throw new Error(`Failed to scrape job URLs: ${error}`);
+//     }
+//   }
+
+//   async scrapeJobDetails(jobUrl: string): Promise<JobData | null> {
+//     if (!this.page || (await this.page.isClosed())) {
+//       throw new Error("Page is not initialized or has been closed");
+//     }
+
+//     try {
+//       console.log(`   🌐 Navigating to job page...`);
+//       await this.humanDelay(800, 2000);
+
+//       // Try-catch for navigation to handle potential frame detachment
 //       try {
-//         await simulateHumanBehavior(page);
-//         await Promise.all([
-//           page.click('a[data-testid="pagination-page-next"]'),
-//           page.waitForSelector("#mosaic-provider-jobcards", { timeout: 15000 }),
-//         ]);
-//         await new Promise((resolve) =>
-//           setTimeout(resolve, 3000 + Math.random() * 2000)
-//         );
-//       } catch (error) {
-//         console.error("Error clicking next button:", error);
-//         break;
+//         await this.page.goto(jobUrl, {
+//           waitUntil: "networkidle0",
+//           timeout: 60000, // Increased timeout
+//         });
+//       } catch (navError) {
+//         console.error(`Navigation failed for ${jobUrl}:`, navError);
+//         // Retry once with a different wait condition
+//         await this.page.goto(jobUrl, { waitUntil: "load", timeout: 60000 });
 //       }
-//     }
 
-//     const allJobs: JobData[] = [];
-//     for (const link of allLinks.slice(0, SCRAPING_CONFIG.maxJobs)) {
-//       console.log(`Fetching details for ${link}`);
-//       const jobDetails = await extractJobDetails(page, link);
-//       if (jobDetails) {
-//         allJobs.push(jobDetails);
-//       }
-//       await new Promise((resolve) =>
-//         setTimeout(resolve, 2000 + Math.random() * 2000)
+//       console.log(`   ⏳ Waiting for page to fully load...`);
+//       await this.page.waitForFunction(
+//         () => document.readyState === "complete",
+//         {
+//           timeout: 15000,
+//         }
 //       );
-//     }
 
-//     return allJobs;
-//   } catch (error) {
-//     console.error("Scraping error:", error);
-//     throw new Error(
-//       `Failed to scrape Indeed jobs: ${
-//         error instanceof Error ? error.message : "Unknown error"
-//       }`
-//     );
-//   } finally {
-//     if (browser) {
-//       await browser.close();
-//     }
-//   }
-// };
+//       await this.page.waitForTimeout(2000);
+//       console.log(`   ⏱️  Waiting exactly 5 seconds for full page render...`);
+//       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-// export const GET = async (request: NextRequest): Promise<NextResponse> => {
-//   const startTime = Date.now();
+//       console.log(`   🤖 Simulating human reading behavior...`);
+//       await this.simulateHumanBehavior();
+//       await this.humanDelay(1000, 2500);
 
-//   try {
-//     const { searchParams } = new URL(request.url);
-//     const { q, l, from, jt, remotejob, radius, sort } =
-//       validateSearchParams(searchParams);
+//       console.log(`   📊 Starting data extraction...`);
+//       const jobData = await this.page.evaluate(() => {
+//         // ... (existing evaluate logic) ...
+//       });
 
-//     const jobs = await scrapeIndeedJobs(
-//       q,
-//       l,
-//       from,
-//       jt,
-//       remotejob,
-//       radius,
-//       sort
-//     );
-
-//     const responseData = {
-//       success: true,
-//       data: jobs,
-//       metadata: {
-//         totalJobs: jobs.length,
-//         searchQuery: { q, l, from, jt, remotejob, radius, sort },
-//         scrapedAt: new Date().toISOString(),
-//         processingTime: `${Date.now() - startTime}ms`,
-//       },
-//     };
-
-//     return NextResponse.json(responseData, {
-//       status: 200,
-//       headers: {
-//         "Cache-Control": "no-cache, no-store, must-revalidate",
-//         "Content-Type": "application/json",
-//       },
-//     });
-//   } catch (error) {
-//     console.error("API Error:", error);
-//     const errorMessage =
-//       error instanceof Error ? error.message : "Internal server error";
-//     return NextResponse.json(
-//       {
-//         success: false,
-//         error: errorMessage,
-//         timestamp: new Date().toISOString(),
-//       },
-//       {
-//         status:
-//           error instanceof Error && error.message.includes("must be at least")
-//             ? 400
-//             : 500,
+//       if (jobData?.title && jobData?.company) {
+//         console.log(
+//           `✓ Successfully scraped: ${jobData.title} at ${jobData.company}`
+//         );
+//         return jobData;
 //       }
-//     );
+//       return null;
+//     } catch (error) {
+//       console.error(`Failed to scrape job details for ${jobUrl}:`, error);
+//       return null;
+//     }
 //   }
-// };
 
-// export const runtime = "nodejs";
+//   async scrapeAllJobs(maxJobs: number = 20): Promise<JobData[]> {
+//     try {
+//       console.log(`Starting to scrape ${maxJobs} jobs...`);
 
-// import { NextRequest, NextResponse } from "next/server";
-// import puppeteer, { Browser, Page, executablePath } from "puppeteer";
+//       // Step 1: Collect ALL job URLs first
+//       console.log("📋 Step 1: Collecting all job URLs...");
+//       const jobUrls = await this.scrapeJobUrls(maxJobs);
+//       console.log(`✓ Collected ${jobUrls.length} job URLs total`);
 
-// interface JobData {
-//   title: string;
-//   company: string;
-//   location: string;
-//   jobType: string[];
-//   description: string;
-//   applyLink: string;
+//       // Step 2: Visit each URL and scrape details
+//       console.log("🔍 Step 2: Visiting each job URL to scrape details...");
+//       const jobsData: JobData[] = [];
+
+//       for (let i = 0; i < jobUrls.length; i++) {
+//         const url = jobUrls[i];
+//         console.log(
+//           `\n📄 Processing job ${i + 1}/${jobUrls.length}: ${url.substring(
+//             0,
+//             80
+//           )}...`
+//         );
+
+//         try {
+//           const jobData = await this.scrapeJobDetails(url);
+//           if (jobData && jobData.title && jobData.company) {
+//             jobsData.push(jobData);
+//             console.log(`✅ Success: "${jobData.title}" at ${jobData.company}`);
+//           } else {
+//             console.log(`❌ Failed to extract complete job data`);
+//           }
+
+//           // Human-like delay between each job visit (3-8 seconds)
+//           const delayTime = Math.floor(Math.random() * 5000) + 3000;
+//           console.log(`⏱️  Waiting ${delayTime / 1000}s before next job...`);
+//           await this.humanDelay(delayTime, delayTime);
+
+//           // Random additional human behavior (40% chance)
+//           if (Math.random() > 0.6) {
+//             console.log("🤖 Simulating human behavior...");
+//             await this.simulateHumanBehavior();
+//           }
+//         } catch (error) {
+//           console.error(`❌ Failed to scrape job at ${url}:`, error);
+//           continue;
+//         }
+//       }
+
+//       console.log(
+//         `\n🎉 Successfully scraped ${jobsData.length} complete job records`
+//       );
+//       return jobsData;
+//     } catch (error) {
+//       throw new Error(`Failed to scrape jobs: ${error}`);
+//     }
+//   }
+
+//   async cleanup(): Promise<void> {
+//     try {
+//       if (this.page) {
+//         await this.page.close();
+//         this.page = null;
+//       }
+//       if (this.browser) {
+//         await this.browser.close();
+//         this.browser = null;
+//       }
+//     } catch (error) {
+//       console.error("Cleanup error:", error);
+//     }
+//   }
 // }
 
-// interface ScrapingConfig {
-//   headless: boolean;
-//   timeout: number;
-//   maxJobs: number;
-//   maxPages: number;
-//   viewport: {
-//     width: number;
-//     height: number;
-//   };
-// }
-
-// const SCRAPING_CONFIG: ScrapingConfig = {
-//   headless: false,
-//   timeout: 60000,
-//   maxJobs: 10,
-//   maxPages: 2,
-//   viewport: { width: 1366, height: 768 },
-// };
-
-// const USER_AGENTS = [
-//   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-//   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-//   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-//   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-// ];
-
-// const validateSearchParams = (searchParams: URLSearchParams) => {
-//   const q = searchParams.get("q")?.trim();
-//   const l = searchParams.get("l")?.trim() || "United States";
-//   const from = searchParams.get("from")?.trim() || "fromtoday";
-//   const jt = searchParams.get("jt")?.trim() || "fulltime";
-//   const remotejob = searchParams.get("remotejob")?.trim() || "1";
-//   const radius = searchParams.get("radius")?.trim() || "25";
-//   const sort = searchParams.get("sort")?.trim() || "date";
-
-//   if (!q || q.length < 2) {
-//     throw new Error("Job title (q) must be at least 2 characters long");
-//   }
-
-//   if (
-//     q.length > 100 ||
-//     l.length > 100 ||
-//     from.length > 50 ||
-//     jt.length > 50 ||
-//     remotejob.length > 50 ||
-//     radius.length > 50 ||
-//     sort.length > 50
-//   ) {
-//     throw new Error("Search parameters too long");
-//   }
-
-//   if (!["fromtoday", "lastweek", "lastmonth"].includes(from)) {
-//     throw new Error(
-//       "Invalid time posted (from). Use fromtoday, lastweek, or lastmonth."
-//     );
-//   }
-//   if (
-//     !["fulltime", "parttime", "contract", "temporary", "internship"].includes(
-//       jt
-//     )
-//   ) {
-//     throw new Error(
-//       "Invalid job type (jt). Use fulltime, parttime, contract, temporary, or internship."
-//     );
-//   }
-//   if (!["0", "1"].includes(remotejob)) {
-//     throw new Error("Invalid remote filter (remotejob). Use 0 or 1.");
-//   }
-//   if (!/^\d+$/.test(radius)) {
-//     throw new Error("Invalid radius. Use a number (e.g., 25).");
-//   }
-//   if (!["date", "relevance"].includes(sort)) {
-//     throw new Error("Invalid sort order (sort). Use date or relevance.");
-//   }
-
-//   return { q, l, from, jt, remotejob, radius, sort };
-// };
-
-// const getRandomUserAgent = (): string => {
-//   return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-// };
-
-// const createBrowser = async (): Promise<Browser> => {
-//   const browser = await puppeteer.launch({
-//     headless: SCRAPING_CONFIG.headless,
-//     executablePath: executablePath(),
-//     args: [
-//       "--no-sandbox",
-//       "--disable-setuid-sandbox",
-//       "--disable-dev-shm-usage",
-//       "--disable-accelerated-2d-canvas",
-//       "--no-first-run",
-//       "--no-zygote",
-//       "--disable-gpu",
-//       "--disable-blink-features=AutomationControlled",
-//       "--disable-features=VizDisplayCompositor",
-//       "--disable-extensions",
-//       "--disable-background-timer-throttling",
-//       "--disable-backgrounding-occluded-windows",
-//       "--disable-renderer-backgrounding",
-//       "--disable-background-networking",
-//       "--disable-ipc-flooding-protection",
-//       "--window-size=1366,768",
-//     ],
-//     defaultViewport: null,
-//   });
-//   return browser;
-// };
-
-// const setupPage = async (browser: Browser): Promise<Page> => {
-//   const page = await browser.newPage();
-
-//   await page.evaluateOnNewDocument(() => {
-//     Object.defineProperty(navigator, 'webdriver', {
-//       get: () => undefined,
-//     });
-
-//     (window).chrome = {
-//       runtime: {},
-//     };
-
-//     Object.defineProperty(navigator, 'plugins', {
-//       get: () => [1, 2, 3, 4, 5],
-//     });
-
-//     Object.defineProperty(navigator, 'languages', {
-//       get: () => ['en-US', 'en'],
-//     });
-
-//     const originalQuery = window.navigator.permissions.query;
-//     return window.navigator.permissions.query = (parameters) => (
-//       parameters.name === 'notifications' ?
-//         originalQuery({ name: 'notifications' }) :
-//         originalQuery(parameters)
-//     );
-//   });
-
-//   await page.setUserAgent(getRandomUserAgent());
-
-//   await page.setExtraHTTPHeaders({
-//     "Accept-Language": "en-US,en;q=0.9",
-//     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-//     "Accept-Encoding": "gzip, deflate, br",
-//     "Accept-Charset": "UTF-8",
-//     "Connection": "keep-alive",
-//     "Upgrade-Insecure-Requests": "1",
-//     "Sec-Fetch-Dest": "document",
-//     "Sec-Fetch-Mode": "navigate",
-//     "Sec-Fetch-Site": "none",
-//     "Cache-Control": "max-age=0"
-//   });
-
-//   await page.setViewport({
-//     width: 1366 + Math.floor(Math.random() * 100),
-//     height: 768 + Math.floor(Math.random() * 100)
-//   });
-
-//   return page;
-// };
-
-// const simulateHumanBehavior = async (page: Page): Promise<void> => {
-//   const actions = [
-//     async () => {
-//       const viewport = await page.viewport();
-//       const width = viewport?.width || 1366;
-//       const height = viewport?.height || 768;
-//       const x = Math.random() * (width || 1366);
-//       const y = Math.random() * (height || 768);
-//       await page.mouse.move(x, y, { steps: Math.floor(Math.random() * 5) + 10 });
-//     },
-//     async () => {
-//       await page.evaluate(() => {
-//         const scrollAmount = Math.random() * 300 + 100;
-//         window.scrollBy(0, scrollAmount);
-//       });
-//     },
-//     async () => {
-//       await page.keyboard.press('Tab');
-//     },
-//     async () => {
-//       const viewport = await page.viewport();
-//       const width = viewport?.width || 1366;
-//       await page.mouse.move(Math.random() * (width || 1366), Math.random() * 100, { steps: 15 });
-//     }
-//   ];
-
-//   const randomAction = actions[Math.floor(Math.random() * actions.length)];
-//   await randomAction();
-
-//   await new Promise(resolve =>
-//     setTimeout(resolve, Math.random() * 3000 + 1000)
-//   );
-// };
-
-// const handleVerification = async (page: Page, attempt = 1): Promise<void> => {
-//   const maxAttempts = 5; // Define maxAttempts within the function scope
-//   try {
-//     const maxAttempts = 5;
-//     const checkbox = await page
-//       .waitForSelector('.cb-lb input[type="checkbox"]', { timeout: 5000 })
-//       .catch(() => null);
-
-//     if (checkbox) {
-//       console.log(`Attempt ${attempt}: Verification detected, applying advanced human simulation...`);
-
-//       await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-
-//       await page.mouse.move(Math.random() * 200 + 100, Math.random() * 200 + 100, { steps: 20 });
-//       await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-
-//       const box = await checkbox.boundingBox();
-//       if (box) {
-//         const x = box.x + box.width / 2 + (Math.random() - 0.5) * 5;
-//         const y = box.y + box.height / 2 + (Math.random() - 0.5) * 5;
-//         await page.mouse.move(x, y, { steps: 15 });
-//         await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200));
-//         await page.mouse.click(x, y, { delay: Math.random() * 100 + 50 });
-//       }
-
-//       await page.waitForFunction(
-//         () =>
-//           !document.querySelector('.cb-lb input[type="checkbox"]') ||
-//           document.querySelector("#success") ||
-//           document.querySelector("#fail") ||
-//           document.querySelector("#timeout") ||
-//           document.querySelector("#expired"),
-//         { timeout: 45000 }
-//       );
-
-//       const success = !(await page.$('.cb-lb input[type="checkbox"]')) || (await page.$("#success"));
-
-//       if (success) {
-//         console.log("Verification successful.");
-//         await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 2000));
-//       } else {
-//         throw new Error("Verification failed or timed out.");
-//       }
-//     } else if (attempt < maxAttempts) {
-//       console.log(`Attempt ${attempt} failed: No checkbox found, retrying...`);
-//       await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 3000));
-//       await handleVerification(page, attempt + 1);
-//     } else {
-//       console.log("Max verification attempts reached, proceeding...");
-//     }
-//   } catch (error) {
-//     console.error("Verification error:", error);
-//     if (attempt < maxAttempts) {
-//       await new Promise(resolve => setTimeout(resolve, Math.random() * 5000 + 5000));
-//       await handleVerification(page, attempt + 1);
-//     }
-//   }
-// };
-
-// const buildIndeedUrl = (
-//   q: string,
-//   l: string,
-//   from: string,
-//   jt: string,
-//   remotejob: string,
-//   radius: string,
-//   sort: string
-// ): string => {
-//   const baseUrl = "https://www.indeed.com/jobs";
-//   const params = new URLSearchParams({
-//     q,
-//     l,
-//     from,
-//     jt,
-//     remotejob,
-//     radius,
-//     sort,
-//   });
-//   return `${baseUrl}?${params.toString()}`;
-// };
-
-// const scrollJobList = async (page: Page): Promise<void> => {
-//   try {
-//     await page.waitForSelector("#mosaic-provider-jobcards", { timeout: 15000 });
-
-//     let previousJobCount = 0;
-//     let sameCount = 0;
-//     const maxSameCount = 3;
-
-//     while (sameCount < maxSameCount) {
-//       const jobCount = await page.evaluate(() => {
-//         const jobList = document.querySelector("#mosaic-provider-jobcards ul");
-//         return jobList ? jobList.querySelectorAll("li").length : 0;
-//       });
-
-//       if (jobCount === previousJobCount) {
-//         sameCount++;
-//       } else {
-//         sameCount = 0;
-//       }
-
-//       previousJobCount = jobCount;
-
-//       await page.evaluate(() => {
-//         const scrollAmount = Math.random() * 200 + 100;
-//         window.scrollBy(0, scrollAmount);
-//       });
-
-//       await simulateHumanBehavior(page);
-//       await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 2000));
-//     }
-
-//     console.log(`Scrolled job list, loaded ${previousJobCount} jobs`);
-//   } catch (error) {
-//     console.error("Error scrolling job list:", error);
-//   }
-// };
-
-// const extractJobLinks = async (page: Page): Promise<string[]> => {
-//   try {
-//     await page.waitForSelector("#mosaic-provider-jobcards", { timeout: 15000 });
-
-//     const links = await page.evaluate(() => {
-//       const jobCards = Array.from(
-//         document.querySelectorAll("#mosaic-provider-jobcards a.tapItem")
-//       );
-//       return jobCards
-//         .map((card) => {
-//           const href = card.getAttribute("href") || "";
-//           return href.startsWith("/") ? `https://www.indeed.com${href}` : href;
-//         })
-//         .filter((link) => link);
-//     });
-
-//     return links;
-//   } catch (error) {
-//     console.error("Error extracting job links:", error);
-//     return [];
-//   }
-// };
-
-// const extractJobDetails = async (
-//   page: Page,
-//   applyLink: string
-// ): Promise<JobData | null> => {
-//   try {
-//     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-
-//     await page.goto(applyLink, {
-//       waitUntil: "domcontentloaded",
-//       timeout: 30000,
-//     });
-
-//     await simulateHumanBehavior(page);
-//     await handleVerification(page);
-
-//     await page.waitForSelector("#jobDescriptionText", { timeout: 15000 });
-
-//     const jobDetails = await page.evaluate(() => {
-//       const titleElement = document.querySelector(
-//         "h1.jobsearch-JobInfoHeader-title"
-//       );
-//       const companyElement = document.querySelector(
-//         ".jobsearch-CompanyInfoContainer a, .jobsearch-CompanyInfoContainer div[data-company-name]"
-//       );
-//       const locationElement = document.querySelector(
-//         ".jobsearch-JobInfoHeader-subtitle div:not([class])"
-//       );
-//       const jobTypeElements = document.querySelectorAll(
-//         ".jobsearch-JobMetadataHeader-item, .jobsearch-JobMetadataHeader-itemWithIcon"
-//       );
-//       const descriptionElement = document.querySelector("#jobDescriptionText");
-
-//       const title = titleElement?.textContent?.trim() || "";
-//       const company = companyElement?.textContent?.trim() || "";
-//       const location = locationElement?.textContent?.trim() || "";
-//       const jobType = Array.from(jobTypeElements)
-//         .map((el) => el.textContent?.trim() || "")
-//         .filter(Boolean);
-//       const description = descriptionElement
-//         ? descriptionElement.outerHTML
-//         : "";
-
-//       return { title, company, location, jobType, description };
-//     });
-
-//     if (!jobDetails.description) {
-//       console.warn(`No description found for ${applyLink}`);
-//     }
-
-//     return {
-//       title: jobDetails.title,
-//       company: jobDetails.company,
-//       location: jobDetails.location,
-//       jobType: jobDetails.jobType,
-//       description: jobDetails.description,
-//       applyLink,
-//     };
-//   } catch (error) {
-//     console.error(`Error extracting details for ${applyLink}:`, error);
-//     return null;
-//   }
-// };
-
-// const scrapeIndeedJobs = async (
-//   q: string,
-//   l: string,
-//   from: string,
-//   jt: string,
-//   remotejob: string,
-//   radius: string,
-//   sort: string
-// ): Promise<JobData[]> => {
-//   let browser: Browser | null = null;
+// export async function POST(request: NextRequest): Promise<NextResponse> {
+//   const scraper = new HumanLikeIndeedScraper();
 
 //   try {
-//     browser = await createBrowser();
-//     const page = await setupPage(browser);
+//     const maxJobs = 20;
+//     const headless = false;
 
-//     const url = buildIndeedUrl(q, l, from, jt, remotejob, radius, sort);
-
-//     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-
-//     await page.goto(url, {
-//       waitUntil: "domcontentloaded",
-//       timeout: 30000,
-//     });
-
-//     await simulateHumanBehavior(page);
-//     await handleVerification(page);
-
-//     let allLinks: string[] = [];
-//     const seenLinks = new Set<string>();
-
-//     for (let pageNum = 0; pageNum < SCRAPING_CONFIG.maxPages; pageNum++) {
-//       console.log(`Scraping page ${pageNum + 1}...`);
-
-//       await scrollJobList(page);
-
-//       let links = await extractJobLinks(page);
-
-//       links = links.filter((link) => {
-//         if (seenLinks.has(link)) return false;
-//         seenLinks.add(link);
-//         return true;
-//       });
-
-//       allLinks = allLinks.concat(links);
-
-//       const nextButton = await page.$(
-//         'a[data-testid="pagination-page-next"]:not([disabled])'
-//       );
-
-//       if (!nextButton || allLinks.length >= SCRAPING_CONFIG.maxJobs) {
-//         console.log("No more pages or max jobs reached.");
-//         break;
-//       }
-
-//       try {
-//         await simulateHumanBehavior(page);
-//         await Promise.all([
-//           page.click('a[data-testid="pagination-page-next"]'),
-//           page.waitForSelector("#mosaic-provider-jobcards", { timeout: 15000 }),
-//         ]);
-//         await new Promise(resolve =>
-//           setTimeout(resolve, Math.random() * 3000 + 3000)
-//         );
-//       } catch (error) {
-//         console.error("Error clicking next button:", error);
-//         break;
-//       }
-//     }
-
-//     const allJobs: JobData[] = [];
-//     for (const link of allLinks.slice(0, SCRAPING_CONFIG.maxJobs)) {
-//       console.log(`Fetching details for ${link}`);
-//       const jobDetails = await extractJobDetails(page, link);
-//       if (jobDetails) {
-//         allJobs.push(jobDetails);
-//       }
-//       await new Promise(resolve =>
-//         setTimeout(resolve, Math.random() * 3000 + 2000)
+//     if (maxJobs < 1 || maxJobs > 50) {
+//       return NextResponse.json(
+//         { error: "maxJobs must be between 1 and 50 for stability" },
+//         { status: 400 }
 //       );
 //     }
 
-//     return allJobs;
-//   } catch (error) {
-//     console.error("Scraping error:", error);
-//     throw new Error(
-//       `Failed to scrape Indeed jobs: ${
-//         error instanceof Error ? error.message : "Unknown error"
-//       }`
-//     );
-//   } finally {
-//     if (browser) {
-//       await browser.close();
-//     }
-//   }
-// };
+//     console.log(`🚀 Starting human-like scraping for ${maxJobs} jobs...`);
 
-// export const GET = async (request: NextRequest): Promise<NextResponse> => {
-//   const startTime = Date.now();
+//     await scraper.initialize(headless);
+//     const jobsData = await scraper.scrapeAllJobs(maxJobs);
 
-//   try {
-//     const { searchParams } = new URL(request.url);
-//     const { q, l, from, jt, remotejob, radius, sort } =
-//       validateSearchParams(searchParams);
-
-//     const jobs = await scrapeIndeedJobs(
-//       q,
-//       l,
-//       from,
-//       jt,
-//       remotejob,
-//       radius,
-//       sort
-//     );
-
-//     const responseData = {
+//     return NextResponse.json({
 //       success: true,
-//       data: jobs,
-//       metadata: {
-//         totalJobs: jobs.length,
-//         searchQuery: { q, l, from, jt, remotejob, radius, sort },
-//         scrapedAt: new Date().toISOString(),
-//         processingTime: `${Date.now() - startTime}ms`,
-//       },
-//     };
-
-//     return NextResponse.json(responseData, {
-//       status: 200,
-//       headers: {
-//         "Cache-Control": "no-cache, no-store, must-revalidate",
-//         "Content-Type": "application/json",
-//       },
+//       data: jobsData,
+//       totalJobs: jobsData.length,
+//       message: `Successfully scraped ${jobsData.length} jobs using human-like behavior`,
+//       timestamp: new Date().toISOString(),
 //     });
 //   } catch (error) {
-//     console.error("API Error:", error);
-//     const errorMessage =
-//       error instanceof Error ? error.message : "Internal server error";
+//     console.error("❌ Scraping error:", error);
 //     return NextResponse.json(
 //       {
-//         success: false,
-//         error: errorMessage,
+//         error: "Failed to scrape jobs",
+//         message: error instanceof Error ? error.message : "Unknown error",
 //         timestamp: new Date().toISOString(),
 //       },
-//       {
-//         status:
-//           error instanceof Error && error.message.includes("must be at least")
-//             ? 400
-//             : 500,
-//       }
+//       { status: 500 }
 //     );
+//   } finally {
+//     await scraper.cleanup();
 //   }
-// };
+// }
 
-// export const runtime = "nodejs";
-
-export const GET = async (request: NextRequest): Promise<NextResponse> => {
-  try {
-    const { searchParams } = new URL(request.url);
-    console.log(searchParams);
-    return NextResponse.json(
-      {
-        success: true,
+export async function GET() {
+  return NextResponse.json({
+    message: "Human-Like Indeed Job Scraper API",
+    version: "2.0",
+    features: [
+      "Anti-CAPTCHA human behavior simulation",
+      "Random delays and mouse movements",
+      "Multiple fallback selectors",
+      "Stealth mode browsing",
+    ],
+    endpoints: {
+      POST: "/api/scrape-jobs",
+      description: "Scrape Indeed jobs with human-like behavior",
+      parameters: {
+        maxJobs: "number (1-50, default: 20)",
+        headless: "boolean (default: true)",
       },
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage,
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
-  }
-};
+    },
+  });
+}
